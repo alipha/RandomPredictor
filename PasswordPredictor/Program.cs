@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using RandomPredictor;
+using PasswordPredictor.RandomGenerators;
 
 namespace PasswordPredictor
 {
@@ -13,69 +14,59 @@ namespace PasswordPredictor
         public static void Main(string[] args)
         {
             var auditor = new RandomAuditor(new Random(50), new SubGenPredictor());
-            var generator = new AuditedGenerator(auditor);
-            auditor.DebugOutput = true;
+            var generator = new PasswordGenerator(auditor);
             //var generator = new PasswordGenerator(new Random(50));
 
             var passwords = new List<Password>();
-            var rootStates = new List<State>();
+            var currentStates = new List<State>();
+            var passwordCount = 0;
 
-            for (var i = 0; i < 7; i++)
+            GetPassword(generator, passwords);
+            AddSiblings(currentStates, new State(passwords, null));
+
+            while (currentStates.Count > 1)
             {
-                string password = generator.GeneratePassword();
-                Console.WriteLine(password);
-                passwords.Add(new Password(password));
-                //Console.WriteLine(string.Join(", ", passwords[i].SpecialIndexes.Select(x => x.Item1 + " " + x.Item2)));
-                //Console.WriteLine(string.Join(", ", passwords[i].UpperIndexes.Select(x => x.Item1 + " " + x.Item2)));
-                //Console.WriteLine(string.Join(", ", passwords[i].LowerIndexes.Select(x => x.Item1 + " " + x.Item2)));
-                //Console.WriteLine(string.Join(", ", passwords[i].NumericIndexes.Select(x => x.Item1 + " " + x.Item2)));
+                passwordCount++;
+                Console.WriteLine(string.Format("Observed: {0}\tPossible states: {1}", passwordCount, currentStates.Count));
+                //Console.ReadLine();
+
+                GetPassword(generator, passwords);
+                var newStates = new List<State>();
+
+                foreach (var state in currentStates)
+                    AddSiblings(newStates, new State(state, null));
+
+                currentStates = newStates;
             }
 
-            var state = new State(passwords, null);
-            stateCount++;
-            rootStates.Add(state);
+            while (true)
+            {
+                auditor.Predictor = currentStates[0].Predictor;
+                auditor.DebugOutput = true;
+                GetPassword(generator, passwords);
+                Console.ReadLine();
+            }
+        }
+
+
+        private static void GetPassword(PasswordGenerator generator, List<Password> passwords)
+        {
+            string password = generator.GeneratePassword();
+            Console.WriteLine(password);
+            passwords.Add(new Password(password));
+        }
+
+
+        private static void AddSiblings(List<State> states, State state)
+        {
+            if(!state.ImpossibleState)
+                states.Add(state);
 
             while ((state = state.NextSibling()) != null)
             {
-                stateCount++;
-                rootStates.Add(state);
+                if(!state.ImpossibleState)
+                    states.Add(state);
             }
-            
-            
-            // 0= 5
-            // 1= 6
-            for (var i = 1; i <= 5; i++)
-            {
-                int c = 0;
-                foreach (var s in rootStates)
-                {
-                    //if (i == 1 && c == 5)
-                    //    State.Log = true;
-                    AddChildren(s, i);
-                    //if (i == 1 && c == 5)
-                    //    State.Log = false;
-                    c++;
-                }
-            }
-            
-
-            
-            int childIndex = 0;
-            foreach(var s in rootStates)
-            {
-                s.Transverse(childIndex, (x, index) => 
-                { 
-                    if(x.ObservedPasswordIndex == 4) 
-                        Console.WriteLine(string.Format("{0}\t{1}\t{2}\t{3}", x.ObservedPasswordIndex, index, x.Children.Count, x.Children.Count(y => !y.ImpossibleState))); 
-                });
-                childIndex++;
-            }
-            
-
-            Console.WriteLine(rootStates.Count);
-            Console.WriteLine(stateCount);
-            Console.WriteLine(State.ImpossibleStateCount);
-            Console.ReadLine();
         }
 
 
@@ -105,7 +96,7 @@ namespace PasswordPredictor
         private static void Test3()
         {
             var auditor = new RandomAuditor(new Random(73), new SubGenPredictor());
-            var generator = new AuditedGenerator(auditor);
+            var generator = new PasswordGenerator(auditor);
 
             for (var i = 0; i < 4; i++)
             {

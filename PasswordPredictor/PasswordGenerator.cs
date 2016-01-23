@@ -1,12 +1,13 @@
 ﻿using System;
+using PasswordPredictor.RandomGenerators;
 
 namespace PasswordPredictor
 {
     public class PasswordGenerator
     {
-        private Random random;
+        private IRandom random;
 
-        public PasswordGenerator(Random random)
+        public PasswordGenerator(IRandom random)
         {
             this.random = random;
         }

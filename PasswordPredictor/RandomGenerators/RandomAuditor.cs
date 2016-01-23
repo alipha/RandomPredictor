@@ -2,9 +2,9 @@
 using System.Linq;
 using RandomPredictor;
 
-namespace PasswordPredictor
+namespace PasswordPredictor.RandomGenerators
 {
-    public class RandomAuditor
+    public class RandomAuditor : IRandom
     {
         public Random Random { get; set; }
 
