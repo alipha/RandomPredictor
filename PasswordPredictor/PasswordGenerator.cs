@@ -7,28 +7,31 @@ namespace PasswordPredictor
     {
         private IRandom random;
 
+        public int PasswordLength { get; set; }
+
+
         public PasswordGenerator(IRandom random)
         {
             this.random = random;
+            PasswordLength = 8;
         }
 
         public string GeneratePassword()
         {
-            const int passwordLength = 8;
             int index;
             
-            var chars = new char[passwordLength];
+            var chars = new char[PasswordLength];
 
-            index = GetAvailablePosition(chars, passwordLength);
+            index = GetAvailablePosition(chars, chars.Length);
             chars[index] = Password.SpecialChars[random.Next(Password.SpecialChars.Length)];
 
-            index = GetAvailablePosition(chars, passwordLength - 1);
+            index = GetAvailablePosition(chars, chars.Length - 1);
             chars[index] = Password.UpperCaseChars[random.Next(Password.UpperCaseChars.Length)];
 
-            index = GetAvailablePosition(chars, passwordLength - 2);
+            index = GetAvailablePosition(chars, chars.Length - 2);
             chars[index] = Password.LowerCaseChars[random.Next(Password.LowerCaseChars.Length)];
 
-            index = GetAvailablePosition(chars, passwordLength - 3);
+            index = GetAvailablePosition(chars, chars.Length - 3);
             chars[index] = Password.NumberChars[random.Next(Password.NumberChars.Length)];
 
             for (int i = 0; i < chars.Length; i++)

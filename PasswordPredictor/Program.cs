@@ -39,6 +39,22 @@ namespace PasswordPredictor
                 currentStates = newStates;
             }
 
+            /*
+            var predictor = new SubGenPredictor(currentStates[0].Predictor);
+            var possibleRandomOutputs = new List<WeightedValue>[generator.PasswordLength + 4];
+            possibleRandomOutputs[0] = predictor.PredictWeightedNext(generator.PasswordLength).ToList();
+            possibleRandomOutputs[1] = predictor.PredictWeightedNext(Password.SpecialChars.Length).ToList();
+            possibleRandomOutputs[2] = predictor.PredictWeightedNext(generator.PasswordLength - 1).ToList();
+            possibleRandomOutputs[3] = predictor.PredictWeightedNext(Password.UpperCaseChars.Length).ToList();
+            possibleRandomOutputs[4] = predictor.PredictWeightedNext(generator.PasswordLength - 2).ToList();
+            possibleRandomOutputs[5] = predictor.PredictWeightedNext(Password.LowerCaseChars.Length).ToList();
+            possibleRandomOutputs[6] = predictor.PredictWeightedNext(generator.PasswordLength - 3).ToList();
+            possibleRandomOutputs[7] = predictor.PredictWeightedNext(Password.NumberChars.Length).ToList();
+
+            for(var i = 0; i < generator.PasswordLength - 4; i++)
+                possibleRandomOutputs[i + 8] = predictor.PredictWeightedNext(Password.AllChars.Length).ToList();
+            */
+
             while (true)
             {
                 auditor.Predictor = currentStates[0].Predictor;

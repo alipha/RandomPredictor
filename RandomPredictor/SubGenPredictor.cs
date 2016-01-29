@@ -135,6 +135,27 @@ namespace RandomPredictor
             ));
         }
 
+        public IEnumerable<WeightedValue> PredictWeightedNext(int maxValue, bool increment = true)
+        {
+            var ranges = PredictNext(increment).ToList();
+            var weightedValues = new List<WeightedValue>();
+
+            var bottomRange = ranges.SingleOrDefault(r => r.LowerBound == 0);
+            var topRange = ranges.SingleOrDefault(r => r.UpperBound == Int32.MaxValue - 1);
+
+            if (bottomRange != null && topRange != null)
+            {
+                ranges.Remove(bottomRange);
+                ranges.Remove(topRange);
+                weightedValues.AddRange(CreateWeightedValues(topRange.LowerBound, (long)bottomRange.UpperBound + Int32.MaxValue - 1, maxValue));
+            }
+
+            foreach(var range in ranges)
+                weightedValues.AddRange(CreateWeightedValues(range.LowerBound, range.UpperBound, maxValue));
+
+            return weightedValues.OrderBy(v => v.Weight);
+        }
+
         #endregion
 
 
@@ -150,6 +171,52 @@ namespace RandomPredictor
 
             if (LagIndex >= SeedArray.Length)
                 LagIndex = 0;
+        }
+
+
+        protected IEnumerable<WeightedValue> CreateWeightedValues(long lowerBound, long upperBound, int maxValue)
+        {
+            var middleRaw = (upperBound + lowerBound) / 2;
+            var range = upperBound - lowerBound + 1;
+
+            var low = (int)((double)lowerBound * maxValue / Int32.MaxValue);
+            var middle = (int) ((double)middleRaw * maxValue / Int32.MaxValue);
+            var high = (int)((double)(upperBound - 1) * maxValue / Int32.MaxValue);
+
+            var weightedValues = new List<WeightedValue> { new WeightedValue(0.0M, middle) };
+
+            for (var i = middle - 1; i >= low; i--)
+                weightedValues.Add(new WeightedValue(CalculateWeight(i + 1, lowerBound, upperBound, middleRaw, range, maxValue), i));
+
+            for (var i = middle; i <= high; i--)
+                weightedValues.Add(new WeightedValue(CalculateWeight(i, lowerBound, upperBound, middleRaw, range, maxValue), i));
+
+
+            for (var i = middle + 1; i < weightedValues.Count; i++)
+            {
+                if(weightedValues[i].Value >= maxValue)
+                    weightedValues[i] = new WeightedValue(weightedValues[i].Weight, weightedValues[i].Value - maxValue);
+            }
+
+            return weightedValues;
+        }
+
+
+        protected decimal CalculateWeight(int current, long lowRaw, long highRaw, long middleRaw, long rangeRaw, int maxValue)
+        {
+            var currentRaw = (int)((double)current / maxValue * Int32.MaxValue);
+            var weight = (decimal) (currentRaw - middleRaw) / rangeRaw;
+
+            if (weight < 0.0M)
+                weight = -weight;
+
+            if (currentRaw < lowRaw)
+                weight /= ((decimal)lowRaw - currentRaw) * maxValue / Int32.MaxValue;
+
+            if (currentRaw > highRaw)
+                weight /= ((decimal)currentRaw - highRaw) * maxValue / Int32.MaxValue;
+
+            return weight;
         }
 
 
