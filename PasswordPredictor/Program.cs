@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using PasswordPredictor.PasswordGenerators;
 using RandomPredictor;
 using PasswordPredictor.RandomGenerators;
 
@@ -8,13 +10,139 @@ namespace PasswordPredictor
 {
     public class Program
     {
+        public static void Main(string[] args)
+        {
+            var predictor = new SubGenPredictor();
+            int passwordLength = 0;
+
+            Console.WriteLine("Enter in 6 passwords:");
+
+            for (var i = 0; i < 6; i++)
+            {
+                var password = Console.ReadLine();
+                passwordLength = password.Length;
+                
+                RecordPassword(predictor, password);
+            }
+
+
+            var possibleOutputs = new List<WeightedValue>[passwordLength];
+
+            for (var i = 0; i < passwordLength; i++)
+                possibleOutputs[i] = predictor.PredictWeightedNext(Password.AllChars.Length).ToList();
+
+            List<string> possiblePasswords = GetPossiblePasswords(possibleOutputs, new int[passwordLength], 0);
+            File.WriteAllLines("passwords.txt", possiblePasswords);
+
+            Console.WriteLine($"{possiblePasswords.Count} possible next passwords written to passwords.txt");
+            Console.ReadLine();
+        }
+
+        private static void RecordPassword(SubGenPredictor predictor, string password)
+        {
+            foreach (char ch in password)
+            {
+                var index = Password.AllChars.IndexOf(ch);
+                predictor.CollectNext(index, Password.AllChars.Length);
+            }
+        }
+
+        private static List<string> GetPossiblePasswords(List<WeightedValue>[] possibleOutputs, int[] currentIndexes, int depth)
+        {
+            var password = "";
+            var passwords = new List<string>();
+            var indexes = (int[])currentIndexes.Clone();
+
+            if (depth == possibleOutputs.Length - 1)
+            {
+                for (var i = 0; i < possibleOutputs.Length - 1; i++)
+                    password += Password.AllChars[possibleOutputs[i][indexes[i]].Value];
+            }
+
+            for(var i = 0; i < possibleOutputs[depth].Count; i++)
+            {
+                if (depth == possibleOutputs.Length - 1)
+                {
+                    passwords.Add(password + Password.AllChars[possibleOutputs[depth][i].Value]);
+                }
+                else
+                {
+                    indexes[depth] = i;
+                    passwords.AddRange(GetPossiblePasswords(possibleOutputs, indexes, depth + 1));
+                }
+            }
+
+            return passwords;
+        }
+
+
+
+        #region Old
+
         private static int stateCount = 0;
 
 
-        public static void Main(string[] args)
+        private static IPasswordGenerator CreatePasswordGenerator(IRandom random)
+        {
+            return new GuaranteedCharPasswordGenerator(random);
+        }
+
+        private static void GetPassword(IPasswordGenerator generator, List<Password> passwords)
+        {
+            string password = generator.GeneratePassword();
+            Console.WriteLine(password);
+            passwords.Add(new Password(password));
+        }
+
+
+
+        public static void Test5()
+        {
+            var generator = new SimplePasswordGenerator(new SystemRandom(new Random()));
+            var predictor = new SubGenPredictor();
+            int passwordLength = 0;
+
+            Console.WriteLine("Generating passwords...");
+
+            for (var i = 0; i < 6; i++)
+            {
+                var password = generator.GeneratePassword();
+                passwordLength = password.Length;
+                Console.WriteLine(password);
+
+                RecordPassword(predictor, password);
+            }
+
+
+            var possibleOutputs = new List<WeightedValue>[passwordLength];
+
+            for (var i = 0; i < passwordLength; i++)
+                possibleOutputs[i] = predictor.PredictWeightedNext(Password.AllChars.Length).ToList();
+
+            List<string> possiblePasswords = GetPossiblePasswords(possibleOutputs, new int[passwordLength], 0);
+            File.WriteAllLines("passwords.txt", possiblePasswords);
+
+            Console.WriteLine($"{possiblePasswords.Count} possible next passwords written to passwords.txt");
+            Console.WriteLine("Next password:");
+
+            var nextPassword = generator.GeneratePassword();
+            Console.WriteLine(nextPassword);
+
+            int index = possiblePasswords.IndexOf(nextPassword);
+
+            if (index == -1)
+                Console.WriteLine("This password was not found in the list.");
+            else
+                Console.WriteLine($"Password was found at index {index} in the list.");
+
+            Console.ReadLine();
+        }
+
+
+        private static void Test4()
         {
             var auditor = new RandomAuditor(new Random(50), new SubGenPredictor());
-            var generator = new PasswordGenerator(auditor);
+            var generator = CreatePasswordGenerator(auditor);
             //var generator = new PasswordGenerator(new Random(50));
 
             var passwords = new List<Password>();
@@ -64,15 +192,6 @@ namespace PasswordPredictor
             }
         }
 
-
-        private static void GetPassword(PasswordGenerator generator, List<Password> passwords)
-        {
-            string password = generator.GeneratePassword();
-            Console.WriteLine(password);
-            passwords.Add(new Password(password));
-        }
-
-
         private static void AddSiblings(List<State> states, State state)
         {
             if(!state.ImpossibleState)
@@ -112,7 +231,7 @@ namespace PasswordPredictor
         private static void Test3()
         {
             var auditor = new RandomAuditor(new Random(73), new SubGenPredictor());
-            var generator = new PasswordGenerator(auditor);
+            var generator = CreatePasswordGenerator(auditor);
 
             for (var i = 0; i < 4; i++)
             {
@@ -191,5 +310,7 @@ namespace PasswordPredictor
 
             Console.ReadLine();
         }
+
+        #endregion
     }
 }

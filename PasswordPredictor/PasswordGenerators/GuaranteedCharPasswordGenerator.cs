@@ -1,16 +1,15 @@
-﻿using System;
-using PasswordPredictor.RandomGenerators;
+﻿using PasswordPredictor.RandomGenerators;
 
-namespace PasswordPredictor
+namespace PasswordPredictor.PasswordGenerators
 {
-    public class PasswordGenerator
+    public class GuaranteedCharPasswordGenerator : IPasswordGenerator
     {
         private IRandom random;
 
         public int PasswordLength { get; set; }
 
 
-        public PasswordGenerator(IRandom random)
+        public GuaranteedCharPasswordGenerator(IRandom random)
         {
             this.random = random;
             PasswordLength = 8;
@@ -18,11 +17,9 @@ namespace PasswordPredictor
 
         public string GeneratePassword()
         {
-            int index;
-            
             var chars = new char[PasswordLength];
 
-            index = GetAvailablePosition(chars, chars.Length);
+            var index = GetAvailablePosition(chars, chars.Length);
             chars[index] = Password.SpecialChars[random.Next(Password.SpecialChars.Length)];
 
             index = GetAvailablePosition(chars, chars.Length - 1);

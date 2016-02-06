@@ -188,11 +188,11 @@ namespace RandomPredictor
             for (var i = middle - 1; i >= low; i--)
                 weightedValues.Add(new WeightedValue(CalculateWeight(i + 1, lowerBound, upperBound, middleRaw, range, maxValue), i));
 
-            for (var i = middle; i <= high; i--)
+            for (var i = middle + 1; i <= high; i++)
                 weightedValues.Add(new WeightedValue(CalculateWeight(i, lowerBound, upperBound, middleRaw, range, maxValue), i));
 
 
-            for (var i = middle + 1; i < weightedValues.Count; i++)
+            for (var i = 0; i < weightedValues.Count; i++)
             {
                 if(weightedValues[i].Value >= maxValue)
                     weightedValues[i] = new WeightedValue(weightedValues[i].Weight, weightedValues[i].Value - maxValue);
